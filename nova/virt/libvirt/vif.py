@@ -285,6 +285,10 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
             return self.get_config_802qbh(instance,
                                           network, mapping,
                                           image_meta)
+        elif vif_type == network_model.VIF_TYPE_OTHER:
+            return self.get_config_bridge(instance,
+                                          network, mapping,
+                                          image_meta)
         else:
             raise exception.NovaException(
                 _("Unexpected vif_type=%s") % vif_type)
@@ -326,6 +330,20 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
         linux_net.create_ovs_vif_port(self.get_bridge_name(network),
                                       dev, iface_id, mapping['mac'],
                                       instance['uuid'])
+
+    def plug_plumgrid(self, instance, vif):
+        super(LibvirtGenericVIFDriver,
+              self).plug(instance, vif)
+
+        network, mapping = vif
+        dev = self.get_vif_devname(mapping)
+        iface_id = mapping['vif_uuid']
+        linux_net.create_tap_dev(dev)
+        for itr in range(3):
+            print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$ PLUMGRID $$$$$$$$$$$$$$$$$$$$$$$"
+        utils.execute('/opt/pg/bin/0/ifc_ctl', '.', 'add_port', dev)
+        utils.execute('/opt/pg/bin/0/ifc_ctl', '.', 'ifup', dev, 'access_vm', mapping['label'], iface_id)
+
 
     def plug_ovs_bridge(self, instance, vif):
         """No manual plugging required."""
@@ -396,6 +414,8 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
             self.plug_802qbg(instance, vif)
         elif vif_type == network_model.VIF_TYPE_802_QBH:
             self.plug_802qbh(instance, vif)
+        elif vif_type == network_model.VIF_TYPE_OTHER:
+            self.plug_plumgrid(instance, vif)
         else:
             raise exception.NovaException(
                 _("Unexpected vif_type=%s") % vif_type)
