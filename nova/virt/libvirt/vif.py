@@ -461,6 +461,7 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
         """
         super(LibvirtGenericVIFDriver,
               self).unplug(instance, vif)
+
         try:
             network, mapping = vif
             iface_id = mapping['vif_uuid']
@@ -468,6 +469,7 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
             utils.execute(self.smart_edge_command, '.', 'ifdown',
                           dev, 'access_vm', mapping['label'], iface_id)
             utils.execute(self.smart_edge_command, '.', 'del_port', dev)
+            linux_net.delete_tap_dev(dev)
         except exception.ProcessExecutionError:
             LOG.exception(_("Failed while unplugging vif"), instance=instance)
 
@@ -533,7 +535,7 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
         elif vif_type == network_model.VIF_TYPE_802_QBH:
             self.unplug_802qbh(instance, vif)
         elif vif_type == network_model.VIF_TYPE_OTHER:
-            self.plug_plumgrid(instance, vif)
+            self.unplug_plumgrid(instance, vif)
         else:
             raise exception.NovaException(
                 _("Unexpected vif_type=%s") % vif_type)

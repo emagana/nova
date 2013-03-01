@@ -1245,6 +1245,16 @@ def create_tap_dev(dev, mac_address=None):
                       check_exit_code=[0, 2, 254])
 
 
+def delete_tap_dev(dev):
+    if device_exists(dev):
+        try:
+            utils.execute('ip', 'link', 'delete', dev, run_as_root=True,
+                          check_exit_code=[0, 2, 254])
+        except exception.ProcessExecutionError:
+            LOG.error(_("Failed removing tap interface: '%s'"), dev)
+    LOG.debug(_("Interface removed: '%s'"), dev)
+
+
 # Similar to compute virt layers, the Linux network node
 # code uses a flexible driver model to support different ways
 # of creating ethernet interfaces and attaching them to the network.
