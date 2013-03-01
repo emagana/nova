@@ -461,7 +461,6 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
         """
         super(LibvirtGenericVIFDriver,
               self).unplug(instance, vif)
-        self.smart_edge_command = '/opt/pg/bin/0/ifc_ctl'
         try:
             network, mapping = vif
             iface_id = mapping['vif_uuid']
@@ -533,6 +532,8 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
             self.unplug_802qbg(instance, vif)
         elif vif_type == network_model.VIF_TYPE_802_QBH:
             self.unplug_802qbh(instance, vif)
+        elif vif_type == network_model.VIF_TYPE_OTHER:
+            self.plug_plumgrid(instance, vif)
         else:
             raise exception.NovaException(
                 _("Unexpected vif_type=%s") % vif_type)
