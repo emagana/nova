@@ -190,6 +190,18 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
 
         return conf
 
+    def get_config_plumgrid(self, instance, network, mapping, image_meta):
+        conf = super(LibvirtGenericVIFDriver,
+                     self).get_config(instance,
+                                      network,
+                                      mapping,
+                                      image_meta)
+
+        dev = self.get_vif_devname(mapping)
+        designer.set_vif_host_backend_ethernet_config(conf, dev)
+
+        return conf
+
     def get_config_ovs_bridge(self, instance, network, mapping, image_meta):
         conf = super(LibvirtGenericVIFDriver,
                      self).get_config(instance,
@@ -286,7 +298,7 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
                                           network, mapping,
                                           image_meta)
         elif vif_type == network_model.VIF_TYPE_OTHER:
-            return self.get_config_bridge(instance,
+            return self.get_config_plumgrid(instance,
                                           network, mapping,
                                           image_meta)
         else:
@@ -335,14 +347,16 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
         super(LibvirtGenericVIFDriver,
               self).plug(instance, vif)
 
-        network, mapping = vif
-        dev = self.get_vif_devname(mapping)
-        iface_id = mapping['vif_uuid']
-        linux_net.create_tap_dev(dev)
-        for itr in range(3):
-            print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$ PLUMGRID $$$$$$$$$$$$$$$$$$$$$$$"
-        utils.execute('/opt/pg/bin/0/ifc_ctl', '.', 'add_port', dev)
-        utils.execute('/opt/pg/bin/0/ifc_ctl', '.', 'ifup', dev, 'access_vm', mapping['label'], iface_id)
+        self.smart_edge_command = '/opt/pg/bin/0/ifc_ctl'
+        try:
+            network, mapping = vif
+            dev = self.get_vif_devname(mapping)
+            iface_id = mapping['vif_uuid']
+            linux_net.create_tap_dev(dev)
+            utils.execute(self.smart_edge_command, '.', 'add_port', dev)
+            utils.execute(self.smart_edge_command, '.', 'ifup', dev, 'access_vm', mapping['label'], iface_id)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Failed while plugging vif"), instance=instance)
 
 
     def plug_ovs_bridge(self, instance, vif):
@@ -441,6 +455,22 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
         """No manual unplugging required."""
         super(LibvirtGenericVIFDriver,
               self).unplug(instance, vif)
+
+    def unplug_plumgrid(self, instance, vif):
+        """UnPlug ...
+        """
+        super(LibvirtGenericVIFDriver,
+              self).unplug(instance, vif)
+        self.smart_edge_command = '/opt/pg/bin/0/ifc_ctl'
+        try:
+            network, mapping = vif
+            iface_id = mapping['vif_uuid']
+            dev = self.get_vif_devname(mapping)
+            utils.execute(self.smart_edge_command, '.', 'ifdown',
+                          dev, 'access_vm', mapping['label'], iface_id)
+            utils.execute(self.smart_edge_command, '.', 'del_port', dev)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Failed while unplugging vif"), instance=instance)
 
     def unplug_ovs_hybrid(self, instance, vif):
         """UnPlug using hybrid strategy
