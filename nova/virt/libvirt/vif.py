@@ -350,6 +350,7 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
         self.smart_edge_command = '/opt/pg/bin/0/ifc_ctl'
         try:
             network, mapping = vif
+            net_id = network["net_id"]
             dev = self.get_vif_devname(mapping)
             iface_id = mapping['vif_uuid']
             linux_net.create_tap_dev(dev)

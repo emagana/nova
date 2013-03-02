@@ -1252,7 +1252,7 @@ def delete_tap_dev(dev):
                           check_exit_code=[0, 2, 254])
         except exception.ProcessExecutionError:
             LOG.error(_("Failed removing tap interface: '%s'"), dev)
-    LOG.debug(_("Interface removed: '%s'"), dev)
+    LOG.debug(_("Interface tap removed: '%s'"), dev)
 
 
 # Similar to compute virt layers, the Linux network node
