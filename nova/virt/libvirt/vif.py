@@ -354,7 +354,9 @@ class LibvirtGenericVIFDriver(LibvirtBaseVIFDriver):
             iface_id = mapping['vif_uuid']
             linux_net.create_tap_dev(dev)
             utils.execute(self.smart_edge_command, '.', 'add_port', dev)
-            utils.execute(self.smart_edge_command, '.', 'ifup', dev, 'access_vm', mapping['label'], iface_id)
+            utils.execute(self.smart_edge_command, '.', 'ifup', dev,
+                          'access_vm', mapping['label'], iface_id,
+                          'pgtag2=WebApp', 'pgtag1=TenantA')
         except exception.ProcessExecutionError:
             LOG.exception(_("Failed while plugging vif"), instance=instance)
 
